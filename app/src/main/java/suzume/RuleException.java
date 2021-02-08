@@ -20,3 +20,4 @@ public class RuleException extends RuntimeException {
         return new RuleException(msg, th);
     }
 }
+

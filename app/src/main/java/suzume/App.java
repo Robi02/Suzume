@@ -3,12 +3,24 @@
  */
 package suzume;
 
-public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
+import java.util.ArrayList;
+import java.util.List;
 
+public class App {
+    
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        final int testCase = 10;
+
+        for (int i = 0; i < testCase; ++i) {
+            List<Player> pList = new ArrayList<>();
+            
+            for (int p = 1; p < 5; ++p) {
+                pList.add(Player.of(("P" + p), ("Player" + p)));
+            }
+
+            SuzumeSession session = SuzumeSession.makeSession("testSession", pList);
+
+            // SuzumeSession.calcHuaryoScore();
+        }
     }
 }

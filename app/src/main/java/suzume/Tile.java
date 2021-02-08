@@ -6,7 +6,7 @@ import java.util.List;
 import lombok.Getter;
 
 @Getter
-public class Tile {
+public class Tile implements Comparable<Tile> {
     
     // 상수
     public static final int VAL_BAL = 10; // 특수패: 발(發)
@@ -83,5 +83,25 @@ public class Tile {
      */
     public static List<Tile> getDefinedTileList() {
         return tileList;
+    }
+
+    /**
+     * 'id'값의 대소를 비교합니다. 비교 대상이 더 작은 경우 음수를,
+     * 같은 경우 0을, 큰 경우 양수를 반환합니다.
+     * @param tile 비교할 타일
+     * @return -정수, 0, +정수
+     */
+    @Override
+    public int compareTo(Tile tile) {
+        return this.id - tile.id;
+    }
+
+    /**
+     * 패를 문자열로 출력합니다.
+     * @return <code>{'id','value','color'}</code>순서로 문자열로 변환
+     */
+    @Override
+    public String toString() {
+        return "{" + this.id + ", " + this.value + ", " + this.color + "}";
     }
 }

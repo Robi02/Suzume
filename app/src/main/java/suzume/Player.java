@@ -21,6 +21,11 @@ public class Player {
         this.handTiles = new LinkedList<>();
     }
 
+    // 정적 생성자
+    public static Player of(String id, String name) {
+        return new Player(id, name);
+    }
+
     /**
      * 핸드의 가장 마지막에 타일을 추가합니다.
      * @param tile 추가할 타일
