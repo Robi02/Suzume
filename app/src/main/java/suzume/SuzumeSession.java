@@ -71,16 +71,21 @@ public class SuzumeSession {
         this.doraTile = null;
 
         // 선 플레이어 결정
-        int playerIdx = 0;
-        for (Player player : this.playerList) {
-            if (this.firstPlayer == player) {
-                break;
+        if (this.firstPlayer == null) {
+            this.firstPlayer = this.playerList.get(0);
+        }
+        else {
+            int playerIdx = 0;
+            for (Player player : this.playerList) {
+                if (this.firstPlayer == player) {
+                    break;
+                }
+
+                ++playerIdx;
             }
 
-            ++playerIdx;
+            this.firstPlayer = this.playerList.get((playerIdx + 1) % this.playerList.size());
         }
-
-        this.firstPlayer = this.playerList.get(playerIdx + 1 % this.playerList.size());
 
         // 패 더미 섞기
         this.tileStock.clear();
@@ -95,6 +100,22 @@ public class SuzumeSession {
                 player.addTileToHand(pickRandomTileFromStock());
             }
         }
+    }
+
+    /**
+     * 도라(보너스패 선정)를 수행합니다.
+     * @param player 도라를 시도하는 플레이어
+     * @param selectedDoraTile 선택된 도라패
+     */
+    public void dora(Player player, Tile selectedDoraTile) {
+        Objects.requireNonNull(player);
+        Objects.requireNonNull(selectedDoraTile);
+
+        if (player != this.firstPlayer) {
+            throw RuleException.of("선 플래이어가 아닙니다.");
+        }
+
+        this.doraTile = selectedDoraTile;
     }
 
     /**
@@ -155,7 +176,7 @@ public class SuzumeSession {
      * 더미로부터 무작위 타일을 획득합니다.
      * @return <code>tileStock</code>에서 획득한 무작위 타일
      */
-    private Tile pickRandomTileFromStock() {
+    public Tile pickRandomTileFromStock() {
         if (this.tileStock.size() == 0) {
             return null;
         }
@@ -206,12 +227,12 @@ public class SuzumeSession {
 
             // 탕야오 확인 (모든 패가 2~8사이로만 이루어짐)
             if (isTangYao) {
-                if (val1 < 2 || 8 < val1) isChanTa = false;
-                if (val2 < 2 || 8 < val2) isChanTa = false;
-                if (val3 < 2 || 8 < val3) isChanTa = false;
+                if (val1 < 2 || 8 < val1) isTangYao = false;
+                if (val2 < 2 || 8 < val2) isTangYao = false;
+                if (val3 < 2 || 8 < val3) isTangYao = false;
             }
 
-            // 찬타 확인 (두 개의 몸통 모두 1/9/발/중 포함)
+            // 챤타 확인 (두 개의 몸통 모두 1/9/발/중 포함)
             if (isChanTa) {
                 if ((1 < val1 && val1 < 9) && (1 < val2 && val2 < 9) && (1 < val3 && val3 < 9)) isChanTa = false;
             }
@@ -302,5 +323,27 @@ public class SuzumeSession {
         if (isChanTa) totalScore += 2;
 
         return totalScore;
+    }
+
+    /**
+     * 다음 플레이어로 턴을 넘깁니다.
+     * @apiNote <code>turnHolder</code>가 <code>null</code>일 경우, <code>firstPlayer</code>가 턴 소유자가 됩니다.
+     */
+    public void passTurnToNextPlayer() {
+        if (this.turnHolder == null) {
+            this.turnHolder = this.firstPlayer;
+        }
+        else {
+            int playerIdx = 0;
+            for (Player player : this.playerList) {
+                if (this.turnHolder == player) {
+                    break;
+                }
+
+                ++playerIdx;
+            }
+
+            this.turnHolder = this.playerList.get((playerIdx + 1) % this.playerList.size());
+        }
     }
 }

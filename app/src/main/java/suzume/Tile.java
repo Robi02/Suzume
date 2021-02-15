@@ -28,16 +28,15 @@ public class Tile implements Comparable<Tile> {
         tileList = new ArrayList<>();
         int idCnt = 0;
 
-        // 녹색/혼합 일반패 (27개)
-        for (int set = 0; set < 3; ++set) {
-            for (int val = 1; val <= 9; ++val) {
-                tileList.add(new Tile(++idCnt, val, getTileColorByVal(val)));
-            }
-        }
-
-        // 적색 일반패 (9개)
         for (int val = 1; val <= 9; ++val) {
-            tileList.add(new Tile(++idCnt, val, Color.RED));
+            for (int set = 0; set < 4; ++set) {
+                if (set == 3) { // 적색패
+                    tileList.add(new Tile(++idCnt, val, Color.RED));
+                }
+                else { // 일반패
+                    tileList.add(new Tile(++idCnt, val, getDefaultTileColorByVal(val)));
+                }   
+            }
         }
 
         // 녹색 특수패: 발 (4개)
@@ -52,7 +51,7 @@ public class Tile implements Comparable<Tile> {
     }
 
     // 생성자
-    private Tile(int id, int value, Color color) {
+    public  Tile(int id, int value, Color color) {
         this.id = id;
         this.value = value;
         this.color = color;
@@ -64,7 +63,7 @@ public class Tile implements Comparable<Tile> {
      * @return 해당 숫자의 색상을 반환합니다. <code>Color.RED</code>(적색패)는
      * <code>val</code>이 <code>VAL_JUNG</code>일 때만 반환됩니다.
      */
-    private static Color getTileColorByVal(int val) {
+    private static Color getDefaultTileColorByVal(int val) {
         if (val == 1 || val == 5 || val == 9) {
             return Color.MIXED; // 1, 5, 9
         }

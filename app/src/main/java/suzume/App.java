@@ -4,23 +4,78 @@
 package suzume;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class App {
     
     public static void main(String[] args) {
-        final int testCase = 10;
+        final int testCase = 500000;
+        final List<Player> playerList = new ArrayList<>();
+        final List<String> recordList = new ArrayList<>();
 
         for (int i = 0; i < testCase; ++i) {
-            List<Player> pList = new ArrayList<>();
+            playerList.clear();
             
-            for (int p = 1; p < 5; ++p) {
-                pList.add(Player.of(("P" + p), ("Player" + p)));
+            for (int p = 1; p < SuzumeSession.MAX_PLAYER_CNT; ++p) {
+                playerList.add(Player.of(("P" + p), ("Player" + p)));
             }
 
-            SuzumeSession session = SuzumeSession.makeSession("testSession", pList);
+            SuzumeSession session = SuzumeSession.makeSession("testSession", playerList);
+            session.initRound();
+            session.dora(session.getFirstPlayer(), session.pickRandomTileFromStock());
 
-            // SuzumeSession.calcHuaryoScore();
+            String roundStr = "<< [" + (i + 1) + "]회차! >>";
+            String doraStr = "+ 도라 : " + session.getDoraTile().toString();
+            //System.out.println(roundStr);
+            //System.out.println(doraStr);
+            
+            for (int j = 0; j < playerList.size(); ++j) {
+                Player player = playerList.get(j);
+                session.tsumo(player);
+
+                // if (i == 0 && j == 0) { // 강제 테스트
+                //     List<Tile> testHand = playerList.get(0).getHandTiles();
+                //     testHand.clear();
+                //     testHand.add(new Tile(2, 1, Tile.Color.GREEN));
+                //     testHand.add(new Tile(3, 1, Tile.Color.GREEN));
+                //     testHand.add(new Tile(4, 1, Tile.Color.RED));
+                //     testHand.add(new Tile(30, Tile.VAL_JUNG, Tile.Color.RED));
+                //     testHand.add(new Tile(31, Tile.VAL_JUNG, Tile.Color.RED));
+                //     testHand.add(new Tile(32, Tile.VAL_JUNG, Tile.Color.RED));
+                // }
+
+                List<Tile> handTiles = player.getHandTiles();
+                Collections.sort(handTiles);
+
+                int score = session.calcHuaryoScore(handTiles);
+                String recordStr = "- 플레이어[" + (j + 1) + "] : {" + handTiles.toString() + "}" + " -> [" + score + "]점!";
+                //System.out.println(recordStr);
+
+                if (score > 0) {
+                    recordList.add(roundStr + " " + recordStr + " (" + doraStr + ")");
+                }
+
+                session.passTurnToNextPlayer();
+            }
+
+            //System.out.println();
         }
+
+        System.out.println("<<< 통계 >>>");
+        System.out.println("- 총 시도: " + testCase +"회.");
+        System.out.print("- 0점 이상 기록: ");
+
+        if (recordList.size() > 0) {
+            System.out.println(recordList.size() + "회.");
+            for (String rcStr : recordList) {
+                System.out.println(" -> " + rcStr);
+            }
+        }
+        else {
+            System.out.println("없음.");
+        }
+        
+        System.out.println();
     }
 }
