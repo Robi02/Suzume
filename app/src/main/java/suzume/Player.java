@@ -12,6 +12,7 @@ public class Player {
     private final String name;
     private int score;
     private final List<Tile> handTiles;
+    private final List<Tile> discardTiles;
 
     // 생성자
     private Player(String id, String name) {
@@ -19,6 +20,7 @@ public class Player {
         this.name = name;
         this.score = 0;
         this.handTiles = new LinkedList<>();
+        this.discardTiles = new LinkedList<>();
     }
 
     // 정적 생성자
@@ -38,10 +40,18 @@ public class Player {
         this.handTiles.add(tile);
     }
 
+    public void addTileToDiscard(Tile tile) {
+        if (tile == null) {
+            return;
+        }
+
+        this.discardTiles.add(tile);
+    }
+
     /**
-     * 핸드를 초기화합니다.
+     * 핸드와 버린 타일을 초기화합니다.
      */
-    public void clearHand() {
+    public void clearHandAndDiscard() {
         this.handTiles.clear();
     }
 }

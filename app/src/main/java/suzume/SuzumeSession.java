@@ -1,9 +1,7 @@
 package suzume;
 
-import java.awt.Color;
 import java.security.SecureRandom;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -16,10 +14,20 @@ import lombok.Getter;
 @Getter
 public class SuzumeSession {
 
+    // 열거형
+    public enum SessionState {
+        INITIALIZING,   // 초기화중
+        WAITTING,       // 시작 대기중
+        PLAYING,        // 게임중
+        PAUSED,         // 일시정지
+        CLOSING         // 종료중
+    }
+
     // 상수
     public static final int MAX_PLAYER_CNT = 5;
 
     // 필드
+    private SessionState sessionState;      // 세션 상태
     private final String sessionId;         // 세션 ID
     private final long sessionStartTimeMs;  // 게임 시작시점 시간
     private final SecureRandom random;      // 렌덤
@@ -40,6 +48,7 @@ public class SuzumeSession {
             throw new IllegalArgumentException("Player count must between 2~5! (playerCount: " + playerCnt + ")");
         }
 
+        this.sessionState = SessionState.INITIALIZING;
         this.sessionId = sessionId;
         this.sessionStartTimeMs = System.currentTimeMillis();
         this.random = new SecureRandom(sessionId.getBytes());
@@ -61,6 +70,37 @@ public class SuzumeSession {
         Objects.requireNonNull(sessionId);
         Objects.requireNonNull(playerList);
         return new SuzumeSession(sessionId, playerList);
+    }
+
+    /**
+     * 플레이어들의 명령을 수행합니다.
+     * @param playerAction 명령을 시도하는 플레이어와 게임 명령
+     */
+    public void interpreatAction(PlayerAction playerAction) {
+        Objects.nonNull(playerAction);
+
+        switch (playerAction.getAction()) {
+            case SELECT_DORA_TILE:
+                // 여기부터 시작 //
+                break;
+            case TRY_TSUMO:
+
+                break;
+            case TRY_HUARYO:
+
+                break;
+            case DISCARD_TILE_AND_PASS_TURN:
+
+                break;
+            case TRY_LOAN:
+
+                break;
+            case EXIT_GAME:
+
+                break;
+            default:
+                throw RuleException.of("미정의된 행동입니다.");
+        }
     }
 
     /**
@@ -94,12 +134,14 @@ public class SuzumeSession {
 
         // 플레이어 기본패 나눠주기
         for (Player player : this.playerList) {
-            player.clearHand();
+            player.clearHandAndDiscard();
 
             for (int i = 0; i < 5; ++i) {
                 player.addTileToHand(pickRandomTileFromStock());
             }
         }
+
+        this.sessionState = SessionState.WAITTING;
     }
 
     /**
@@ -149,7 +191,7 @@ public class SuzumeSession {
         }
 
         if (this.turnHolder.getHandTiles().size() != 6) {
-            throw RuleException.of("패가 6개가 아닙니다.");
+            throw RuleException.of("손패가 6개가 아닙니다.");
         }
 
         // 화료 점수 계산
@@ -161,15 +203,28 @@ public class SuzumeSession {
     }
 
     /**
-     * 
-     * @param player
-     * @param tile
+     * 선택한 패를 버리고 턴을 넘깁니다.
+     * @param player 버리기를 시도하는 플레이어
+     * @param tile 버려질 타일
      */
-    public void dahae(Player player, Tile tile) {
+    public void discardTileAndPassTurn(Player player, Tile tile) {
         Objects.requireNonNull(player);
         Objects.requireNonNull(tile);
 
-        
+        List<Tile> handTileList = player.getHandTiles();
+        if (handTileList.size() != 6) {
+            throw RuleException.of("손패가 6개가 아닙니다.");
+        }
+
+    }
+
+    /**
+     * 론(상대가 버린 패로 점수 내기)을 시도합니다.
+     * @param player 론을 시도하는 플레이어
+     * @param tile 론 대상 타일
+     */
+    public void loan(Player player, Tile tile) {
+
     }
 
     /**
