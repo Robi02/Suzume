@@ -23,7 +23,7 @@ public class App {
 
             SuzumeSession session = SuzumeSession.makeSession("testSession", playerList);
             session.initRound();
-            session.dora(session.getFirstPlayer(), session.pickRandomTileFromStock());
+            session.dora(session.getFirstPlayer());
 
             String roundStr = "<< [" + (i + 1) + "]회차! >>";
             String doraStr = "+ 도라 : " + session.getDoraTile().toString();

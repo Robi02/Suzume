@@ -29,8 +29,8 @@ public class Player {
     }
 
     /**
-     * 핸드의 가장 마지막에 타일을 추가합니다.
-     * @param tile 추가할 타일
+     * 핸드의 가장 마지막에 패을 추가합니다.
+     * @param tile 추가할 패
      */
     public void addTileToHand(Tile tile) {
         if (tile == null) {
@@ -40,6 +40,10 @@ public class Player {
         this.handTiles.add(tile);
     }
 
+    /**
+     * 버린 패 더미의 가장 마지막에 패를 추가합니다.
+     * @param tile 버릴 패
+     */
     public void addTileToDiscard(Tile tile) {
         if (tile == null) {
             return;
@@ -49,7 +53,7 @@ public class Player {
     }
 
     /**
-     * 핸드와 버린 타일을 초기화합니다.
+     * 핸드와 버린 패를 초기화합니다.
      */
     public void clearHandAndDiscard() {
         this.handTiles.clear();

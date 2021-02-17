@@ -73,15 +73,15 @@ public class SuzumeSession {
     }
 
     /**
-     * 플레이어들의 명령을 수행합니다.
-     * @param playerAction 명령을 시도하는 플레이어와 게임 명령
+     * 플레이어들의 행동을 수행합니다.
+     * @param playerAction 행동을 시도하는 플레이어, 시점과 수행할 행동
      */
     public void interpreatAction(PlayerAction playerAction) {
         Objects.nonNull(playerAction);
 
         switch (playerAction.getAction()) {
             case SELECT_DORA_TILE:
-                // 여기부터 시작 //
+                
                 break;
             case TRY_TSUMO:
 
@@ -147,17 +147,15 @@ public class SuzumeSession {
     /**
      * 도라(보너스패 선정)를 수행합니다.
      * @param player 도라를 시도하는 플레이어
-     * @param selectedDoraTile 선택된 도라패
      */
-    public void dora(Player player, Tile selectedDoraTile) {
+    public void dora(Player player) {
         Objects.requireNonNull(player);
-        Objects.requireNonNull(selectedDoraTile);
 
         if (player != this.firstPlayer) {
             throw RuleException.of("선 플래이어가 아닙니다.");
         }
 
-        this.doraTile = selectedDoraTile;
+        this.doraTile = pickRandomTileFromStock();
     }
 
     /**
@@ -216,15 +214,64 @@ public class SuzumeSession {
             throw RuleException.of("손패가 6개가 아닙니다.");
         }
 
+        player.getHandTiles().remove(tile);
+        player.addTileToDiscard(tile);
     }
 
     /**
      * 론(상대가 버린 패로 점수 내기)을 시도합니다.
      * @param player 론을 시도하는 플레이어
-     * @param tile 론 대상 타일
+     * @param loanTgtPlayer 론 당하는 플레이어
+     * @param loanTile 론 대상 타일
      */
-    public void loan(Player player, Tile tile) {
+    public void loan(Player player, Player loanTgtPlayer, Tile loanTile) {
+        Objects.requireNonNull(player);
+        Objects.requireNonNull(loanTgtPlayer);
+        Objects.requireNonNull(loanTile);
 
+        // 상대에게 실제 패가 있는지 검사
+        boolean hasTile = false;
+        for (Tile tile : loanTgtPlayer.getDiscardTiles()) {
+            if (tile == loanTile) {
+                hasTile = true;
+                break;
+            }
+        }
+
+        if (hasTile == false) {
+            throw RuleException.of("론 대상에게서 패를 찾을 수 없습니다!");
+        }
+
+        // 내가 버린 종류인지 검사
+        boolean hasDiscard = false;
+        for (Tile tile : player.getDiscardTiles()) {
+            if (tile.getValue() == loanTile.getValue()) {
+                hasDiscard = true;
+                break;
+            }
+        }
+
+        if (hasDiscard) {
+            throw RuleException.of("버린적 있는 패는 론 할 수 없습니다.");
+        }
+
+        // 화료 점수 계산
+        player.getHandTiles().add(loanTile);
+
+        final int score = calcHuaryoScore(this.turnHolder.getHandTiles());
+        if (score < 5) {
+            // 점수 감점
+            // 패 공개
+            return;
+        }
+        
+        // 여기부터...
+        // 설계에 대한 고민을 해야 할 시간
+        // 1. 세션 자체를 하나의 게임으로 만들어서
+        // 무한루프를 통한 이벤트 처리방식으로 설계 할 것인지.
+        // 2. 세션을 상태 머신으로 만들어서
+        // 요청에 대한 응답을 주는 방식으로 설계 할 것인지 고민...
+        // 각각 장단점은 명확하다.
     }
 
     /**
@@ -245,6 +292,10 @@ public class SuzumeSession {
      */
     public int calcHuaryoScore(List<Tile> tileList) {
         Objects.requireNonNull(tileList);
+
+        if (tileList.size() != 6) {
+            throw RuleException.of("손패가 6개가 아닙니다.");
+        }
 
         boolean leftBody = false; // 좌측 3개 패 완성여부
         boolean rightBody = false; // 우측 3개 패 완성여부
@@ -359,7 +410,7 @@ public class SuzumeSession {
         }
 
         // 역만: 슈퍼 레드
-        if (greenTileCnt == 6) {
+        if (redTileCnt == 6) {
             return bodyScore + 20;
         }
 
