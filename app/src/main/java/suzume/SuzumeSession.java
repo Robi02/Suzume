@@ -1,45 +1,41 @@
 package suzume;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import bgame.Session;
 import lombok.Getter;
 
 /**
  * 참새작 (Suzume Jong)
  */
 @Getter
-public class SuzumeSession {
-
-    // 열거형
-    public enum SessionState {
-        INITIALIZING,   // 초기화중
-        WAITTING,       // 시작 대기중
-        PLAYING,        // 게임중
-        PAUSED,         // 일시정지
-        CLOSING         // 종료중
-    }
+public class SuzumeSession extends Session {
 
     // 상수
     public static final int MAX_PLAYER_CNT = 5;
 
-    // 필드
-    private SessionState sessionState;      // 세션 상태
-    private final String sessionId;         // 세션 ID
-    private final long sessionStartTimeMs;  // 게임 시작시점 시간
-    private final SecureRandom random;      // 렌덤
-    private int round;                      // 현재 라운드
-    private final List<Player> playerList;  // 플레이어 리스트
-    private final List<Tile> tileStock;     // 패 더미
-    private Tile doraTile;                  // 도라 패
-    private Player firstPlayer;             // 선 플레이어
-    private Player turnHolder;              // 현시점 턴을 가진 플레이어
+    // 게임 연관 필드
+    private final List<Player> playerList;          // 플레이어 리스트
+    private final List<Tile> tileStock;             // 패 더미
+    private int round;                              // 현재 라운드
+    private Tile doraTile;                          // 도라 패
+    private Player roundStartPlayer;                // 라운드의 선 플레이어
+    private Player turnHolder;                      // 현시점 턴을 가진 플레이어
 
-    // 생성자
+    /**
+     * 내부 생성자.
+     * @param sessionId 세션 ID로 사용할 고유한 값
+     * @param playerList 플레이어 정보가 담긴 리스트
+     * @throws IllegalArgumentException 플레이어 수가 2보다 작거나 <code>MAX_PLAYER_CNT</code>보다 큰 경우.
+     */
     private SuzumeSession(String sessionId, List<Player> playerList) {
+        super(sessionId);
+        
         Objects.requireNonNull(sessionId);
         Objects.requireNonNull(playerList);
 
@@ -48,14 +44,11 @@ public class SuzumeSession {
             throw new IllegalArgumentException("Player count must between 2~5! (playerCount: " + playerCnt + ")");
         }
 
-        this.sessionState = SessionState.INITIALIZING;
-        this.sessionId = sessionId;
-        this.sessionStartTimeMs = System.currentTimeMillis();
-        this.random = new SecureRandom(sessionId.getBytes());
-        this.round = 1;
         this.playerList = playerList;
-        this.tileStock = new LinkedList<>();
+        this.tileStock = new ArrayList<>();
+        this.round = 1;
         this.doraTile = null;
+        this.roundStartPlayer = this.playerList.get(0);
         this.turnHolder = this.playerList.get(0);
     }
 
@@ -66,10 +59,19 @@ public class SuzumeSession {
      * @param playerList 플레이어 리스트
      * @return 생성된 게임 세션
      */
-    public static SuzumeSession makeSession(String sessionId, List<Player> playerList) {
+    public static SuzumeSession openSession(String sessionId, List<Player> playerList) {
         Objects.requireNonNull(sessionId);
         Objects.requireNonNull(playerList);
+
         return new SuzumeSession(sessionId, playerList);
+    }
+
+    /**
+     * 세션을 정리하고 닫습니다.
+     */
+    @Override
+    public void closeSession() {
+        this.sessionState = SessionState.CLOSING;
     }
 
     /**
@@ -140,8 +142,6 @@ public class SuzumeSession {
                 player.addTileToHand(pickRandomTileFromStock());
             }
         }
-
-        this.sessionState = SessionState.WAITTING;
     }
 
     /**
@@ -264,14 +264,6 @@ public class SuzumeSession {
             // 패 공개
             return;
         }
-        
-        // 여기부터...
-        // 설계에 대한 고민을 해야 할 시간
-        // 1. 세션 자체를 하나의 게임으로 만들어서
-        // 무한루프를 통한 이벤트 처리방식으로 설계 할 것인지.
-        // 2. 세션을 상태 머신으로 만들어서
-        // 요청에 대한 응답을 주는 방식으로 설계 할 것인지 고민...
-        // 각각 장단점은 명확하다.
     }
 
     /**
