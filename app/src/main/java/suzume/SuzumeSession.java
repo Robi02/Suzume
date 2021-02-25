@@ -9,11 +9,13 @@ import java.util.Objects;
 
 import bgame.Session;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 참새작 (Suzume Jong)
  */
 @Getter
+@Setter
 public class SuzumeSession extends Session {
 
     // 상수
@@ -21,6 +23,7 @@ public class SuzumeSession extends Session {
 
     // 게임 연관 필드
     private final List<Player> playerList;          // 플레이어 리스트
+    private final List<Tile> tileList;              // 패 리스트
     private final List<Tile> tileStock;             // 패 더미
     private int round;                              // 현재 라운드
     private Tile doraTile;                          // 도라 패
@@ -45,6 +48,7 @@ public class SuzumeSession extends Session {
         }
 
         this.playerList = playerList;
+        this.tileList = Collections.unmodifiableList(new ArrayList<>(Tile.getDefinedTileList()));
         this.tileStock = new ArrayList<>();
         this.round = 1;
         this.doraTile = null;
@@ -64,14 +68,6 @@ public class SuzumeSession extends Session {
         Objects.requireNonNull(playerList);
 
         return new SuzumeSession(sessionId, playerList);
-    }
-
-    /**
-     * 세션을 정리하고 닫습니다.
-     */
-    @Override
-    public void closeSession() {
-        this.sessionState = SessionState.CLOSING;
     }
 
     /**
@@ -145,80 +141,6 @@ public class SuzumeSession extends Session {
     }
 
     /**
-     * 도라(보너스패 선정)를 수행합니다.
-     * @param player 도라를 시도하는 플레이어
-     */
-    public void dora(Player player) {
-        Objects.requireNonNull(player);
-
-        if (player != this.firstPlayer) {
-            throw RuleException.of("선 플래이어가 아닙니다.");
-        }
-
-        this.doraTile = pickRandomTileFromStock();
-    }
-
-    /**
-     * 쯔모(패 가져오기)를 수행합니다.
-     * @param player 쯔모를 시도하는 플레이어
-     */
-    public void tsumo(Player player) {
-        Objects.requireNonNull(player);
-
-        if (this.turnHolder != player) {
-            throw RuleException.of("당신의 턴이 아닙니다.");
-        }
-        
-        if (this.turnHolder.getHandTiles().size() != 5) {
-            throw RuleException.of("이미 패를 가져왔습니다.");
-        }
-
-        this.turnHolder.addTileToHand(pickRandomTileFromStock());
-    }
-
-    /**
-     * 화료(점수 내기)를 수행합니다.
-     * @param player 화료를 시도하는 플레이어
-     * @return 5점 이상일 시 true, 점수가 부족할 시 false
-     */
-    public boolean huaryo(Player player) {
-        Objects.requireNonNull(player);
-
-        if (this.turnHolder != player) {
-            throw RuleException.of("당신의 턴이 아닙니다.");
-        }
-
-        if (this.turnHolder.getHandTiles().size() != 6) {
-            throw RuleException.of("손패가 6개가 아닙니다.");
-        }
-
-        // 화료 점수 계산
-        if (calcHuaryoScore(this.turnHolder.getHandTiles()) < 5) {
-            return false;
-        }
-        
-        return true;
-    }
-
-    /**
-     * 선택한 패를 버리고 턴을 넘깁니다.
-     * @param player 버리기를 시도하는 플레이어
-     * @param tile 버려질 타일
-     */
-    public void discardTileAndPassTurn(Player player, Tile tile) {
-        Objects.requireNonNull(player);
-        Objects.requireNonNull(tile);
-
-        List<Tile> handTileList = player.getHandTiles();
-        if (handTileList.size() != 6) {
-            throw RuleException.of("손패가 6개가 아닙니다.");
-        }
-
-        player.getHandTiles().remove(tile);
-        player.addTileToDiscard(tile);
-    }
-
-    /**
      * 론(상대가 버린 패로 점수 내기)을 시도합니다.
      * @param player 론을 시도하는 플레이어
      * @param loanTgtPlayer 론 당하는 플레이어
@@ -264,6 +186,42 @@ public class SuzumeSession extends Session {
             // 패 공개
             return;
         }
+    }
+
+    /**
+     * 세션 내 해당 id의 플레이어를 반환합니다.
+     * @param id 플레이어 아이디
+     * @return 해당 id를 가진 플레이어를 반환.
+     */
+    public Player getPlayerById(String id) {
+        Objects.requireNonNull(id);
+
+        for (Player player : this.playerList) {
+            if (player.getId().equals(id)) {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 세션 내 해당 id의 패를 반환합니다.
+     * @param id 패 아이디
+     * @return 해당 id를 가진 패를 반환.
+     */
+    public Tile getTileById(String id) {
+        Objects.requireNonNull(id);
+        
+        final int tileId = Integer.valueOf(id);
+
+        for (Tile tile : this.tileList) {
+            if (tileId == tile.getId()) {
+                return tile;
+            }
+        }
+
+        return null;
     }
 
     /**
