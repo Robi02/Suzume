@@ -1,14 +1,14 @@
 package suzume.actions;
 
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import bgame.Action;
 import bgame.ActionResult;
-import lombok.Getter;
 import suzume.SuzumeSession;
 
-@Getter
 public abstract class AbstractAction implements Action {
 
     // 로거
@@ -25,6 +25,6 @@ public abstract class AbstractAction implements Action {
      * @param session 게임 세션
      */
     protected AbstractAction(SuzumeSession session) {
-        this.session = session;
+        Objects.requireNonNull(this.session = session);
     }
 }

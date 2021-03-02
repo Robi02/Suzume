@@ -1,5 +1,7 @@
 package suzume.actions;
 
+import java.util.Objects;
+
 import bgame.ActionResult;
 import suzume.Player;
 import suzume.RuleException;
@@ -15,12 +17,11 @@ public class TsumoAction extends AbstractAction {
      */
     public TsumoAction(SuzumeSession session, String actPlayerId) {
         super(session);
-        this.actPlayer = session.getPlayerById(actPlayerId);
+        Objects.requireNonNull(this.actPlayer = session.getPlayerById(actPlayerId));
     }
 
     /**
      * 쯔모(패 가져오기)를 수행합니다.
-     * @param player 쯔모를 시도하는 플레이어
      */
     public ActionResult act() {
         final Player turnHolder = session.getTurnHolder();

@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import bgame.Action;
+import bgame.ActionResult;
 import bgame.Session;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +20,13 @@ import lombok.Setter;
 @Setter
 public class SuzumeSession extends Session {
 
+    public enum SuzumeState {
+        DORA,
+        THUMO,
+        DISCARD,
+        
+    }
+
     // 상수
     public static final int MAX_PLAYER_CNT = 5;
 
@@ -25,6 +34,7 @@ public class SuzumeSession extends Session {
     private final List<Player> playerList;          // 플레이어 리스트
     private final List<Tile> tileList;              // 패 리스트
     private final List<Tile> tileStock;             // 패 더미
+    private boolean loanAble;                       // 론 가능 여부
     private int round;                              // 현재 라운드
     private Tile doraTile;                          // 도라 패
     private Player roundStartPlayer;                // 라운드의 선 플레이어
@@ -50,6 +60,7 @@ public class SuzumeSession extends Session {
         this.playerList = playerList;
         this.tileList = Collections.unmodifiableList(new ArrayList<>(Tile.getDefinedTileList()));
         this.tileStock = new ArrayList<>();
+        this.loanAble = false;
         this.round = 1;
         this.doraTile = null;
         this.roundStartPlayer = this.playerList.get(0);
@@ -71,37 +82,6 @@ public class SuzumeSession extends Session {
     }
 
     /**
-     * 플레이어들의 행동을 수행합니다.
-     * @param playerAction 행동을 시도하는 플레이어, 시점과 수행할 행동
-     */
-    public void interpreatAction(PlayerAction playerAction) {
-        Objects.nonNull(playerAction);
-
-        switch (playerAction.getAction()) {
-            case SELECT_DORA_TILE:
-                
-                break;
-            case TRY_TSUMO:
-
-                break;
-            case TRY_HUARYO:
-
-                break;
-            case DISCARD_TILE_AND_PASS_TURN:
-
-                break;
-            case TRY_LOAN:
-
-                break;
-            case EXIT_GAME:
-
-                break;
-            default:
-                throw RuleException.of("미정의된 행동입니다.");
-        }
-    }
-
-    /**
      * 라운드(국) 초기화.
      */
     public void initRound() {
@@ -109,20 +89,20 @@ public class SuzumeSession extends Session {
         this.doraTile = null;
 
         // 선 플레이어 결정
-        if (this.firstPlayer == null) {
-            this.firstPlayer = this.playerList.get(0);
+        if (this.roundStartPlayer == null) {
+            this.roundStartPlayer = this.playerList.get(0);
         }
         else {
             int playerIdx = 0;
             for (Player player : this.playerList) {
-                if (this.firstPlayer == player) {
+                if (this.roundStartPlayer == player) {
                     break;
                 }
 
                 ++playerIdx;
             }
 
-            this.firstPlayer = this.playerList.get((playerIdx + 1) % this.playerList.size());
+            this.roundStartPlayer = this.playerList.get((playerIdx + 1) % this.playerList.size());
         }
 
         // 패 더미 섞기
@@ -141,53 +121,17 @@ public class SuzumeSession extends Session {
     }
 
     /**
-     * 론(상대가 버린 패로 점수 내기)을 시도합니다.
-     * @param player 론을 시도하는 플레이어
-     * @param loanTgtPlayer 론 당하는 플레이어
-     * @param loanTile 론 대상 타일
+     * 플레이어 액션을 수행합니다.
+     * @param action 플레이어의 액션
+     * @return 액션의 결과.
+     * @apiNote 이 메서드는 <code>synchronized</code>로 동작하여 thread-safe를 보장합니다.
      */
-    public void loan(Player player, Player loanTgtPlayer, Tile loanTile) {
-        Objects.requireNonNull(player);
-        Objects.requireNonNull(loanTgtPlayer);
-        Objects.requireNonNull(loanTile);
-
-        // 상대에게 실제 패가 있는지 검사
-        boolean hasTile = false;
-        for (Tile tile : loanTgtPlayer.getDiscardTiles()) {
-            if (tile == loanTile) {
-                hasTile = true;
-                break;
-            }
-        }
-
-        if (hasTile == false) {
-            throw RuleException.of("론 대상에게서 패를 찾을 수 없습니다!");
-        }
-
-        // 내가 버린 종류인지 검사
-        boolean hasDiscard = false;
-        for (Tile tile : player.getDiscardTiles()) {
-            if (tile.getValue() == loanTile.getValue()) {
-                hasDiscard = true;
-                break;
-            }
-        }
-
-        if (hasDiscard) {
-            throw RuleException.of("버린적 있는 패는 론 할 수 없습니다.");
-        }
-
-        // 화료 점수 계산
-        player.getHandTiles().add(loanTile);
-
-        final int score = calcHuaryoScore(this.turnHolder.getHandTiles());
-        if (score < 5) {
-            // 점수 감점
-            // 패 공개
-            return;
-        }
+    public synchronized ActionResult doAction(Action action) {
+        Objects.requireNonNull(action);
+        return action.act();
     }
 
+    
     /**
      * 세션 내 해당 id의 플레이어를 반환합니다.
      * @param id 플레이어 아이디
@@ -237,157 +181,12 @@ public class SuzumeSession extends Session {
     }
 
     /**
-     * 현재 패의 점수를 계산합니다.
-     * @return 계산된 점수
-     */
-    public int calcHuaryoScore(List<Tile> tileList) {
-        Objects.requireNonNull(tileList);
-
-        if (tileList.size() != 6) {
-            throw RuleException.of("손패가 6개가 아닙니다.");
-        }
-
-        boolean leftBody = false; // 좌측 3개 패 완성여부
-        boolean rightBody = false; // 우측 3개 패 완성여부
-        boolean isChinYao = true; // 칭야오 스위치 (모든 패가 1/9/발/중으로만 이루어짐)
-        boolean isTangYao = true; // 탕야오 스위치 (모든 패가 2~8사이로만 이루어짐)
-        boolean isChanTa = true; // 챤타 스위치 (두 개의 몸통 모두 1/9/발/중 포함)
-        int redTileCnt = 0;
-        int greenTileCnt = 0;
-        int doraTileCnt = 0;
-        int bodyScore = 0;
-        int totalScore = 0;
-
-        // 패를 오름차순으로 정렬
-        Collections.sort(tileList); 
-
-        // 좌(i=0), 우(i=1)패 3개씩 점수 계산
-        for (int i = 0; i < 2; ++i) {
-            final int idx = i * 2 + i;
-            final Tile tile1 = tileList.get(idx);     // 0, 3
-            final Tile tile2 = tileList.get(idx + 1); // 1, 4
-            final Tile tile3 = tileList.get(idx + 2); // 2, 5
-            final Tile.Color color1 = tile1.getColor();
-            final Tile.Color color2 = tile2.getColor();
-            final Tile.Color color3 = tile3.getColor();
-            final int val1 = tile1.getValue();
-            final int val2 = tile2.getValue();
-            final int val3 = tile3.getValue();
-
-            // 칭야오 확인 (모든 패가 1/9/발/중으로만 이루어짐)
-            if (isChinYao) {
-                if (1 < val1 && val1 < 9) isChinYao = false;
-                if (1 < val2 && val2 < 9) isChinYao = false;
-                if (1 < val3 && val3 < 9) isChinYao = false;
-            }
-
-            // 탕야오 확인 (모든 패가 2~8사이로만 이루어짐)
-            if (isTangYao) {
-                if (val1 < 2 || 8 < val1) isTangYao = false;
-                if (val2 < 2 || 8 < val2) isTangYao = false;
-                if (val3 < 2 || 8 < val3) isTangYao = false;
-            }
-
-            // 챤타 확인 (두 개의 몸통 모두 1/9/발/중 포함)
-            if (isChanTa) {
-                if ((1 < val1 && val1 < 9) && (1 < val2 && val2 < 9) && (1 < val3 && val3 < 9)) isChanTa = false;
-            }
-
-            // 적색패 개수 계산
-            if (color1 == Tile.Color.RED) ++redTileCnt;
-            if (color2 == Tile.Color.RED) ++redTileCnt;            
-            if (color3 == Tile.Color.RED) ++redTileCnt;
-
-            // 녹색패 개수 계산
-            if (color1 == Tile.Color.GREEN) ++greenTileCnt;
-            if (color2 == Tile.Color.GREEN) ++greenTileCnt;            
-            if (color3 == Tile.Color.GREEN) ++greenTileCnt;
-
-            // 도라 개수 계산
-            int doraValue = this.doraTile.getValue();
-            if (tile1.getValue() == doraValue) ++doraTileCnt;
-            if (tile2.getValue() == doraValue) ++doraTileCnt;
-            if (tile3.getValue() == doraValue) ++doraTileCnt;
-
-            // 연속패(1,2,3) 검사 (+1)
-            boolean isStright = false;
-            if ((tile3.getValue() < Tile.VAL_BAL)) {
-                if (tile1.getValue() == tile2.getValue() + 1) {
-                    if (tile2.getValue() == tile3.getValue() + 1) {
-                        if (i == 0) {
-                            leftBody = true;
-                        }
-                        else {
-                            rightBody = true;
-                        }
-
-                        bodyScore += 1;
-                        isStright = true;
-                    }
-                }
-            }
-
-            // 동일패(1,1,1) 검사 (+2)
-            if (isStright == false) {
-                if (tile1.getValue() == tile2.getValue()) {
-                    if (tile2.getValue() == tile3.getValue()) {
-                        if (i == 0) {
-                            leftBody = true;
-                        }
-                        else {
-                            rightBody = true;
-                        }
-
-                        bodyScore += 2;
-                    }
-                }
-            }
-        }
-
-        // 좌우 몸체가 하나라도 완성되지 않은 경우 0점
-        if (leftBody == false || rightBody == false) {
-            return 0;
-        }
-        
-        // 역만: 올 그린
-        if (greenTileCnt == 6) {
-            return bodyScore + 10;
-        }
-
-        // 역만: 칭야오
-        if (isChinYao) {
-            return bodyScore + 15;
-        }
-
-        // 역만: 슈퍼 레드
-        if (redTileCnt == 6) {
-            return bodyScore + 20;
-        }
-
-        totalScore = bodyScore;
-
-        // 보너스: 적색 패 점수 계산
-        totalScore += redTileCnt;
-        
-        // 보너스: 도라 패 점수 계산
-        totalScore += doraTileCnt;
-        
-        // 보너스: 탕야오
-        if (isTangYao) totalScore += 1;
-
-        // 보너스: 챤타
-        if (isChanTa) totalScore += 2;
-
-        return totalScore;
-    }
-
-    /**
      * 다음 플레이어로 턴을 넘깁니다.
      * @apiNote <code>turnHolder</code>가 <code>null</code>일 경우, <code>firstPlayer</code>가 턴 소유자가 됩니다.
      */
     public void passTurnToNextPlayer() {
         if (this.turnHolder == null) {
-            this.turnHolder = this.firstPlayer;
+            this.turnHolder = this.roundStartPlayer;
         }
         else {
             int playerIdx = 0;

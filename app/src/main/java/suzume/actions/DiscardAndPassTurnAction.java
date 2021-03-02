@@ -1,6 +1,7 @@
 package suzume.actions;
 
 import java.util.List;
+import java.util.Objects;
 
 import bgame.ActionResult;
 import suzume.Player;
@@ -16,17 +17,17 @@ public class DiscardAndPassTurnAction extends AbstractAction {
     /**
      * 생성자.
      * @param session 게임 세션
+     * @param actPlayerId 액션을 수행하는 플레이어 아이디
+     * @param discardTileId 버려질 패의 아이디
      */
     public DiscardAndPassTurnAction(SuzumeSession session, String actPlayerId, String discardTileId) {
         super(session);
-        this.actPlayer = session.getPlayerById(actPlayerId);
-        this.discardTile = session.getTileById(discardTileId);
+        Objects.requireNonNull(this.actPlayer = session.getPlayerById(actPlayerId));
+        Objects.requireNonNull(this.discardTile = session.getTileById(discardTileId));
     }
 
     /**
      * 선택한 패를 버리고 턴을 넘깁니다.
-     * @param player 버리기를 시도하는 플레이어
-     * @param tile 버려질 타일
      */
     public ActionResult act() {
         final List<Tile> turnHolderHand = this.actPlayer.getHandTiles();
