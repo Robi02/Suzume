@@ -3,10 +3,13 @@ package suzume;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class Player {
     
     private final String id;
@@ -59,6 +62,26 @@ public class Player {
     public void clearHandAndDiscard() {
         this.handTiles.clear();
         this.discardTiles.clear();
+    }
+
+    /**
+     * 해당 플레이어에게 점수를 줍니다.<p>
+     * 줄 점수가 부족하면 남은 만큼만 줄 수 있습니다. (점수는 항상 0이상입니다.)
+     * @param to 대상 플레이어
+     * @param score 줄 점수
+     * @return 실제로 준 점수
+     */
+    public int giveScore(Player to, int score) {
+        Objects.requireNonNull(to);
+        
+        int myScore = this.getScore();
+        int scoreAfter = myScore - score;
+        int giveScore = scoreAfter < 0 ? myScore : score;
+        
+        this.setScore(myScore - giveScore);
+        to.setScore(to.getScore() + giveScore);
+        
+        return giveScore;
     }
 
     /**

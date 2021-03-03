@@ -9,6 +9,7 @@ import suzume.RuleException;
 import suzume.SuzumeSession;
 import suzume.SuzumeUtil;
 import suzume.Tile;
+import suzume.SuzumeSession.SuzumeState;
 
 public class HuaryoAction extends AbstractAction {
 
@@ -28,6 +29,10 @@ public class HuaryoAction extends AbstractAction {
      * 화료(점수 내기)를 수행합니다.
      */
     public ActionResult act() {
+        if (session.getSuzumeState() != SuzumeState.WAITING_DISCARD) {
+            throw RuleException.of("지금 수행할 수 없습니다.");
+        }
+
         final Player turnHolder = session.getTurnHolder();
         final List<Tile> turnHolderHand = turnHolder.getHandTiles();
 
@@ -45,7 +50,7 @@ public class HuaryoAction extends AbstractAction {
         }
 
         logger.info("{action:\"HuaryoAction\",session:\"" + session.getSessionId() + "\",actPlayer:\"" + actPlayer.getId() + "\"}");
-        
+
         return null;
     }
 }

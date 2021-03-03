@@ -1,10 +1,8 @@
 package suzume;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,10 +24,12 @@ public class SuzumeSession extends Session {
         WAITING_DORA,
         WAITING_THUMO,
         WAITING_DISCARD,
+        WAITING_LOAN,
     }
 
     // 상수
     public static final int MAX_PLAYER_CNT = 5;
+    public static final long LOAN_WAITING_MS = 5000L;
 
     // 게임 연관 필드
     private final List<Player> playerList;          // 플레이어 리스트
@@ -40,6 +40,7 @@ public class SuzumeSession extends Session {
     private Tile doraTile;                          // 도라 패
     private Player roundStartPlayer;                // 라운드의 선 플레이어
     private Player turnHolder;                      // 현시점 턴을 가진 플레이어
+    private SuzumeState suzumeState;                // 참새작 게임 상태
 
     /**
      * 내부 생성자.
@@ -66,6 +67,7 @@ public class SuzumeSession extends Session {
         this.doraTile = null;
         this.roundStartPlayer = this.playerList.get(0);
         this.turnHolder = this.playerList.get(0);
+        this.sessionState = SessionState.PLAYING;
     }
 
     // 메서드
@@ -119,6 +121,34 @@ public class SuzumeSession extends Session {
                 player.addTileToHand(pickRandomTileFromStock());
             }
         }
+        
+        // 게임 상태: 도라
+        suzumeState = SuzumeState.WAITING_DORA;
+    }
+
+    /**
+     * 라운드(국) 종료.
+     */
+    public void finishRound() {
+        // ...        
+    }
+
+    /**
+     * 론을 발동시킵니다. 세션은 <code>LOAN_WAITING_MS</code>ms의 시간 후에
+     * 라운드(국)을 종료시키고, 다음 라운드를 진행시키거나 최종 종료시킵니다.
+     * @apiNote 시간 측정을 위해 별도의 스레드를 생성하고, 콜백으로 세션의
+     * <code>finishRound()</code>메서드를 발동시킵니다.
+     */
+    public void triggerLoan() {
+        synchronized (this) {
+            if (this.suzumeState == SuzumeState.WAITING_LOAN) {
+                return;
+            }
+
+            this.suzumeState = SuzumeState.WAITING_LOAN;
+        }
+
+        
     }
 
     /**

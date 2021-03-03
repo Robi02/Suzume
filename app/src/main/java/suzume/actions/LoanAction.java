@@ -10,6 +10,7 @@ import suzume.RuleException;
 import suzume.SuzumeSession;
 import suzume.SuzumeUtil;
 import suzume.Tile;
+import suzume.SuzumeSession.SuzumeState;
 
 public class LoanAction extends AbstractAction {
 
@@ -33,7 +34,9 @@ public class LoanAction extends AbstractAction {
      * 론을 수행합니다.
      */
     public ActionResult act() {
-        if (session.isLoanable() == false) {
+        // 게임 상태가 쯔모대기 혹은 론 대기중일때만 론 가능
+        if (session.getSuzumeState() != SuzumeState.WAITING_THUMO ||
+            session.getSuzumeState() != SuzumeState.WAITING_LOAN ) {
             throw RuleException.of("지금은 론을 할 수 없습니다.");
         }
 
@@ -51,6 +54,8 @@ public class LoanAction extends AbstractAction {
         if (score < 5) {
             throw RuleException.of("론을 해도 점수가 부족합니다.");
         }
+
+        session.finishRound();
         
         logger.info("{action:\"LoanAction\",session:\"" + session.getSessionId() +
                     "\",actPlayer:\"" + actPlayer.getId() + "\", targetPlayer:\"" +
