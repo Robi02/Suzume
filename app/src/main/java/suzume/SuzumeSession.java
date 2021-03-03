@@ -2,6 +2,7 @@ package suzume;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,11 +21,11 @@ import lombok.Setter;
 @Setter
 public class SuzumeSession extends Session {
 
+    // 열거형
     public enum SuzumeState {
-        DORA,
-        THUMO,
-        DISCARD,
-        
+        WAITING_DORA,
+        WAITING_THUMO,
+        WAITING_DISCARD,
     }
 
     // 상수
@@ -34,7 +35,7 @@ public class SuzumeSession extends Session {
     private final List<Player> playerList;          // 플레이어 리스트
     private final List<Tile> tileList;              // 패 리스트
     private final List<Tile> tileStock;             // 패 더미
-    private boolean loanAble;                       // 론 가능 여부
+    private boolean loanable;                       // 론 가능 여부
     private int round;                              // 현재 라운드
     private Tile doraTile;                          // 도라 패
     private Player roundStartPlayer;                // 라운드의 선 플레이어
@@ -60,7 +61,7 @@ public class SuzumeSession extends Session {
         this.playerList = playerList;
         this.tileList = Collections.unmodifiableList(new ArrayList<>(Tile.getDefinedTileList()));
         this.tileStock = new ArrayList<>();
-        this.loanAble = false;
+        this.loanable = false;
         this.round = 1;
         this.doraTile = null;
         this.roundStartPlayer = this.playerList.get(0);
@@ -200,5 +201,25 @@ public class SuzumeSession extends Session {
 
             this.turnHolder = this.playerList.get((playerIdx + 1) % this.playerList.size());
         }
+    }
+
+    /**
+     * 게임 세션 정보를 문자열로 출력합니다.
+     * @return 문자열로 변환된 세션 정보
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("{")
+          .append("playerList:" + Arrays.toString(playerList.toArray()))
+          .append(",tileStock:" + Arrays.toString(tileStock.toArray()))
+          .append(",round:" + round)
+          .append(",doraTile:" + doraTile)
+          .append(",roundStartPlayer:" + roundStartPlayer)
+          .append(",turnHolder:" + turnHolder)
+          .append("}");
+
+        return sb.toString();
     }
 }

@@ -1,7 +1,6 @@
 package suzume.actions;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,8 +33,8 @@ public class LoanAction extends AbstractAction {
      * 론을 수행합니다.
      */
     public ActionResult act() {
-        if (session.isLoanAble() == false) {
-            throw RuleException.of("아직 론을 할 수 없습니다.");
+        if (session.isLoanable() == false) {
+            throw RuleException.of("지금은 론을 할 수 없습니다.");
         }
 
         final List<Tile> targetDiscardList = targetPlayer.getDiscardTiles();
@@ -46,7 +45,7 @@ public class LoanAction extends AbstractAction {
         }
 
         final List<Tile> copiedHandTile = new ArrayList<>(actPlayer.getHandTiles());
-        copiedHandTile.add(loanTile); // 핸드의 사본에 론 패 추가
+        copiedHandTile.add(loanTile); // 핸드 사본에 론 패 추가
 
         final int score = SuzumeUtil.calcHuaryoScore(session.getDoraTile(), copiedHandTile);
         if (score < 5) {

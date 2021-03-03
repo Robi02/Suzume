@@ -1,5 +1,6 @@
 package suzume;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,5 +58,25 @@ public class Player {
      */
     public void clearHandAndDiscard() {
         this.handTiles.clear();
+        this.discardTiles.clear();
+    }
+
+    /**
+     * 플레이어를 문자열로 출력합니다.
+     * @return <code>{'id','name','score','handTiles','discardTiles'}</code>순서로 문자열로 변환
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("{")
+          .append("id:" + id)
+          .append(",name:" + name)
+          .append(",score:" + score)
+          .append(",handTiles:" + Arrays.toString(handTiles.toArray()))
+          .append(",discardTiles:" + Arrays.toString(discardTiles.toArray()))
+          .append("}");
+
+        return sb.toString();
     }
 }

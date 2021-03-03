@@ -101,6 +101,14 @@ public class Tile implements Comparable<Tile> {
      */
     @Override
     public String toString() {
-        return "{" + this.id + ", " + this.value + ", " + this.color + "}";
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("{")
+          .append("id:" + id)
+          .append(",value:" + value)
+          .append(",color:" + color)
+          .append("}");
+
+        return sb.toString();
     }
 }
